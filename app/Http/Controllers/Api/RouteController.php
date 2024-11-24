@@ -10,6 +10,7 @@ use App\Models\RouteDirection;
 use App\Services\RouteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class RouteController extends Controller
 {
@@ -21,11 +22,11 @@ class RouteController extends Controller
     }
 
    //получить все маршруты с их остановками
-    public function index(): JsonResponse
+    public function index(): AnonymousResourceCollection
     {
         $routes = Route::with(['directions.routeStops.stop'])->get();
 
-        return response()->json($routes);
+        return RouteResource::collection($routes);
     }
 
     //редактировать остановки маршрута
@@ -37,14 +38,18 @@ class RouteController extends Controller
             $request->directions
         );
 
-        if ($result['status'] === 'error') {
-            return response()->json($result, 422);
+        if ($result === null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ошибка при обновлении маршрута'],
+                500);
         }
+        $result->load(['directions.routeStops.stop']);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Маршрут успешно обновлен',
-            'route' => new RouteResource($result['route'])
+            'route' => new RouteResource($result)
         ]);
     }
 

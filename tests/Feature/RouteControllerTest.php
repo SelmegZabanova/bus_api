@@ -44,22 +44,24 @@ class RouteControllerTest extends TestCase
         $response = $this->getJson('/api/routes');
 
         $response->assertStatus(200)
-            ->assertJsonCount(3)
+            ->assertJsonCount(3, 'data')
             ->assertJsonStructure([
-                '*' => [
-                    'id',
-                    'name',
-                    'directions' => [
-                        '*' => [
-                            'id',
-                            'direction',
-                            'route_stops' => [
-                                '*' => [
-                                    'id',
-                                    'stop_order',
-                                    'stop' => [
+                'data' => [
+                    '*' => [
+                        'id',
+                        'name',
+                        'directions' => [
+                            '*' => [
+                                'id',
+                                'direction',
+                                'route_stops' => [
+                                    '*' => [
                                         'id',
-                                        'name'
+                                        'stop_order',
+                                        'stop' => [
+                                            'id',
+                                            'name'
+                                        ]
                                     ]
                                 ]
                             ]
@@ -71,7 +73,6 @@ class RouteControllerTest extends TestCase
 
     public function test_can_update_route(): void
     {
-        // Arrange
         $route = Route::factory()->create();
         $stops = Stop::factory()->count(3)->create();
 
@@ -88,10 +89,9 @@ class RouteControllerTest extends TestCase
             ]
         ];
 
-        // Act
         $response = $this->putJson("/api/routes/{$route->id}", $updateData);
 
-        // Assert Response
+
         $response->assertStatus(200)
             ->assertJson([
                 'status' => 'success',
@@ -113,11 +113,11 @@ class RouteControllerTest extends TestCase
                 ]
             ]);
 
-        // Assert Database
+
         $this->assertDatabaseCount('route_directions', 2);
         $this->assertDatabaseCount('route_stops', 6); // 3 остановки * 2 направления
 
-        // Assert Direction Types
+
         $this->assertDatabaseHas('route_directions', [
             'route_id' => $route->id,
             'direction' => DirectionType::FORWARD->value

@@ -26,14 +26,18 @@ class RouteDirectionController
             $request->validated()
         );
 
-        if ($result['status'] === 'error') {
-            return response()->json($result, 422);
+        if ($result === null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ошибка при обновлении направления маршрута'
+            ], 500);
         }
+        $result->load(['routeStops.stop']);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Маршрут успешно обновлен',
-            'route' => new RouteDirectionResource($result['route_direction'])
+            'route' => new RouteDirectionResource($result)
         ]);
     }
 

@@ -10,7 +10,13 @@ use Illuminate\Database\Eloquent\Collection;
 
 class RouteService
 {
-    public function updateRouteStops(Route $route, array $directions): array
+    private RouteDirectionService $routeDirectionService;
+
+    public function __construct(RouteDirectionService $routeDirectionService)
+    {
+        $this->routeDirectionService = $routeDirectionService;
+    }
+    public function updateRouteStops(Route $route, array $directions): ?Route
     {
         try {
             DB::beginTransaction();
@@ -25,32 +31,15 @@ class RouteService
                 ]);
 
                 // Создаем остановки с правильным порядком
-                $routeStops = [];
-                foreach ($directionData['stops'] as $index => $stopId) {
-                    $routeStops[] = [
-                        'stop_id' => $stopId,
-                        'stop_order' => $index + 1
-                    ];
-                }
-                $direction->routeStops()->createMany($routeStops);
+                $this->routeDirectionService->updateStops($direction, $directionData['stops']);
             }
 
             DB::commit();
-
-            // Перезагружаем маршрут со всеми связями
-            $route->load(['directions.routeStops.stop']);
-
-            return [
-                'status' => 'success',
-                'route' => $route
-            ];
+            return $route;
         } catch (\Exception $exception) {
             DB::rollBack();
 
-            return [
-                'status' => 'error',
-                'message' => 'Ошибка при обновлении маршрута: ' . $exception->getMessage()
-            ];
+            return null;
         }
     }
 }
